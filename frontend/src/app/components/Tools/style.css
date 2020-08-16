@@ -1,0 +1,14 @@
+.container {
+    display: flex;
+}
+
+button {
+    background-color: lightskyblue;
+    border: 2px solid lightsteelblue;
+    border-radius: 5px;
+    margin: 0 5px;
+}
+
+button:nth-child(4) {
+    margin-left: 20px;
+}

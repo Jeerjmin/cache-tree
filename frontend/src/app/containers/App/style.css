@@ -1,0 +1,36 @@
+@import url('https://fonts.googleapis.com/css?family=Roboto:300,400,500');
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  background-color: aliceblue;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.box {
+  padding: 15px;
+  background-color: white;
+  width: 900px;
+  height: 500px;
+  border: 2px solid lightblue;
+
+  display: flex;
+  flex-direction: column;
+}
+
+.top {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.bottom {
+  margin-left: 20px;
+  margin-top: 20px;
+}
