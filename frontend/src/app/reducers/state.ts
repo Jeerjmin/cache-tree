@@ -1,22 +1,25 @@
-import { TreeNodeModel } from 'app/models';
+import { Node, Path } from '../../../../interfaces';
 
 export interface RootState {
-  treeDb: RootState.TreeDbState;
-  treeCache: RootState.TreeCacheState;
-  router?: any;
+  DBTree: RootState.DBTreeState;
+  CachedTree: RootState.CachedTreeState;
 }
 
-export type Node = TreeNodeModel;
-
-
 export namespace RootState {
-  export interface TreeDbState {
-    tree: Node;
-    selectedNode: Node | undefined
+
+  export interface DBTreeState {
+    tree: Node | null;
+    selectedNode: Node | null
+    selectedPath: Path | null
+    isFetching: boolean
   }
-  export interface TreeCacheState {
-    tree: Node;
-    selectedNode: Node | undefined
-    changedNode: Node | undefined
+
+  export interface CachedTreeState {
+    tree: Node | null;
+    dbPath: Path | null
+    selectedNode: Node | null,
+    selectedPath: Path | null
+    changedNode: Node | null
   }
+
 }

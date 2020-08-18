@@ -9,17 +9,26 @@
 
 
 .cell {
+    height: 20px;
     width: 100px;
     cursor: pointer;
 }
 
-.activeCell {
+.activeCell:not(.deleted)  {
+    height: 20px;
     width: 100px;
     cursor: pointer;
     background-color: lightgray;
 }
 
 
-.cell:hover {
+.cell:hover:not(.deleted)  {
     background-color: lightgray;
+}
+
+.deleted {
+    height: 20px;
+    width: 100px;
+    background: gray;
+    cursor: default
 }

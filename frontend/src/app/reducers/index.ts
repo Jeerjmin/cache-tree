@@ -1,11 +1,11 @@
 import { combineReducers } from 'redux';
 import { RootState } from './state';
-import { treeDbReducer } from './treeDb';
-import { treeCacheReducer } from './treeCache';
+import { DBTreeReducer } from './DBTree';
+import { CachedTreeReducer } from './CachedTree';
 
-export { RootState };
+export { RootState }; 
 
-export const rootReducer = combineReducers<RootState>({
-  treeDb: treeDbReducer,
-  treeCache: treeCacheReducer
+export const rootReducer = combineReducers({
+  DBTree: DBTreeReducer,
+  CachedTree: CachedTreeReducer
 });

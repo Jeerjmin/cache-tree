@@ -1,61 +1,90 @@
 import React, { useState, useEffect } from 'react';
+import { CachedTreeActions, DBTreeActions } from 'app/actions';
 import style from './style.css'
-import { Node } from 'app/reducers/state';
+import { Node } from '../../../../../interfaces';
+import classNames from 'classnames/bind'
+let cx = classNames.bind(style);
 
 export namespace TreeNode {
     export interface Props {
-        type: 'CACHE' | 'DB'
+        type: 'DB' | 'CASH';
         node: Node;
-        getChildNodes: any;
-        selectNode: Function;
-        changeNode?: Function;
-        selectedNode?: Node;
-        changedNode?: Node;
+        level: number;
+        indexes: number[];
+        selectNode: typeof DBTreeActions.selectNode | typeof CachedTreeActions.selectNode;
+        selectedNode?: Node | null;
+        changeNode?: typeof CachedTreeActions.changeNode;
+        changedNode?: Node | null;
+        deleteNestedNode?: typeof CachedTreeActions.deleteNestedNode;
+        parentDeleted?: boolean
     }
-  }
+}
   
-  export const TreeNode = ({ type, node, getChildNodes, selectNode, changeNode, changedNode, selectedNode }: TreeNode.Props): JSX.Element => {
-    
+export const TreeNode = ({ 
+        type, node, level, indexes, selectNode, selectedNode, 
+        changeNode, changedNode, deleteNestedNode, parentDeleted
+    }: TreeNode.Props): JSX.Element | null => {
 
-    console.log('update')
+    const [value, changeValue] = useState<string>('')
 
-    const [selectedNode, selectNode] = useState(null)
-
+    useEffect(() => {
+        if (!node.isDeleted && parentDeleted && deleteNestedNode) {
+            deleteNestedNode({ path: { level, indexes }})
+        }
+    }, [parentDeleted])
 
     const renderValue = () => {
-        if (changedNode?.id === node.id) {
-            console.log('renderValue')
+        
+        setTimeout(() => {
+            window.onclick = (event: MouseEvent) => {
+                const input = document.getElementById('input')
 
-            return <input id="input" value={node.value} />
-        }
+                if (event.target != input && changeNode) {
+                    changeNode({ value })
+                    window.onclick = null
+                    changeValue('')
+                }
+            }
+        }, 0)
+
+        return <input id="input" onChange={event => changeValue(event.target.value)} value={value} />
     }
 
-    return (
+    let className = cx({
+        activeCell: (selectedNode && (selectedNode.id === node.id)),
+        cell: !(selectedNode && (selectedNode.id === node.id)),
+        deleted: node.isDeleted
+        });
+
+    return node ? (
         <div className={style.container}>
             <div 
-                className={
-                    (selectedNode && (selectedNode.id === node.id)) 
-                    ? style.activeCell 
-                    : style.cell
-                }
-                onClick={() => selectedNode?.id !== node.id ? selectNode(node) : {}}
+                className={className}
+                onClick={() => selectedNode?.id !== node.id ? selectNode({ node, path: { level, indexes } }) : {}}
             >
-                { changedNode?.id === node.id ? renderValue() : <span>{node.value}</span> }
+                { 
+                    changedNode && (changedNode?.id === node.id) 
+                    ? renderValue() 
+                    : <span>{node.value}</span> 
+                }
             </div>
 
-            {getChildNodes(node).map((childNode: Node, i: number) => (
-                <React.Fragment key={i}>
+            {node.childs.map((childNode: Node, i: number) => (
+                <React.Fragment key={childNode.id + type + i}>
                     <TreeNode
                         type={type}
-                        getChildNodes={getChildNodes}
                         node={childNode}
+                        level={level + 1}
+                        indexes = {[...indexes, i]}
                         selectNode={selectNode}
                         selectedNode={selectedNode}
                         changeNode={changeNode}
+                        changedNode={changedNode}
+                        deleteNestedNode={deleteNestedNode}
+                        parentDeleted={node.isDeleted}
                     />
                 </React.Fragment>
-            ) ) }
+            ))}
         </div>
-    )
-
-  }
+    ) : null
+}
