@@ -19,9 +19,9 @@ export namespace TreeNode {
         parentDeleted?: boolean
     }
 }
-  
-export const TreeNode = ({ 
-        type, node, level, indexes, selectNode, selectedNode, 
+
+export const TreeNode = ({
+        type, node, level, indexes, selectNode, selectedNode,
         changeNode, changedNode, deleteNestedNode, parentDeleted
     }: TreeNode.Props): JSX.Element | null => {
 
@@ -34,7 +34,7 @@ export const TreeNode = ({
     }, [parentDeleted])
 
     const renderValue = () => {
-        
+
         setTimeout(() => {
             window.onclick = (event: MouseEvent) => {
                 const input = document.getElementById('input')
@@ -57,15 +57,15 @@ export const TreeNode = ({
         });
 
     return node ? (
-        <div className={style.container}>
-            <div 
+        <div style={{paddingLeft: `${level > 0 ? 30 : 0}px`}}>
+            <div
                 className={className}
                 onClick={() => selectedNode?.id !== node.id ? selectNode({ node, path: { level, indexes } }) : {}}
             >
-                { 
-                    changedNode && (changedNode?.id === node.id) 
-                    ? renderValue() 
-                    : <span>{node.value}</span> 
+                {
+                    changedNode && (changedNode?.id === node.id)
+                    ? renderValue()
+                    : <span>{node.value}</span>
                 }
             </div>
 

@@ -10,50 +10,33 @@ export const getTree = (req: Request, res: Response) => {
 export const applyTree = (req: Request, res: Response) => {
     let { tree } = global as any
     
-    let { dbPath, tree: cacheTree } = req.body
-            
-    const { level, indexes } = dbPath
-    
-    const path = tree.makePath(level, indexes, false)
+    let { dbPath, trees: cacheTree } = req.body
 
-    if (path === '') {
-        tree = {
-            ...tree, 
-            value: cacheTree.value, 
-            isDeleted: cacheTree.isDeleted,
-            childs: [
-                ...tree.childs, 
-                ...cacheTree.childs 
-            ] 
-        }
+    dbPath.forEach((el: any) => {
+        const path = tree.makePath(el.level, el.indexes, false)
+        console.log('path', path)
 
-        tree = new Tree(tree.id, tree.value, tree.childs);
+        if (path === '') {
+            tree = {
+                ...tree,
+                value: cacheTree[0].value,
+                isDeleted: cacheTree[0].isDeleted,
+                childs: [
+                    ...tree.childs,
+                    ...cacheTree[0].childs
+                ]
+            }
 
-        if (cacheTree.isDeleted) {
-            tree = tree.setIsDeleted(tree)
-        }
-        
-    } else {
-        tree = lUpdate(lDeepClone(tree), path, function (node: Node) {
 
             if (cacheTree.isDeleted) {
-                node = tree.setIsDeleted(node)
+                tree = tree.setIsDeleted(tree)
             }
 
-            return {
-                ...node, 
-                value: cacheTree.value, 
-                isDeleted: cacheTree.isDeleted,
-                childs: [
-                    ...node.childs, 
-                    ...cacheTree.childs 
-                ] 
-            }
-        })
-    }
+        }
+    })
 
-    (global as any).tree = tree
-
+    console.log('result', tree)
+    console.log('apply', dbPath, cacheTree)
 
     res.status(200).json(tree)
 }
