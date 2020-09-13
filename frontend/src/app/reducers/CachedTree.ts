@@ -7,14 +7,13 @@ import {
   clone as lClone,
   cloneDeep as lDeepClone,
   updateWith as lUpdate,
-  get as lGet
 } from 'lodash';
 
 
 const initialState: RootState.CachedTreeState = {
     trees: [],
     tree: null,
-    dbPath: [],
+    dbTail: [],
     selectedNode: null,
     selectedPath: null,
     changedNode: null
@@ -29,8 +28,9 @@ export const CachedTreeReducer = new ReducerFactory(initialState)
   })
   .addReducer(CachedTreeActions.loadNodeAction, (state, action) => {
     if (action.payload) {
-      const node = withoutChild(action.payload.node)
-      const { dbPath } = action.payload
+      const { dbTail } = action.payload
+      const node = { ...withoutChild(action.payload.node), dbTail }
+
       const trees = state.trees
       let newTrees = [...trees]
 
@@ -65,21 +65,21 @@ export const CachedTreeReducer = new ReducerFactory(initialState)
           }
         }
 
-        const newDbPath = newTrees.map((node:Node) => {
-          const find = state.dbPath.find((el: any) => el.id === node.id)
+        const newdbTail = newTrees.map((node:Node) => {
+          const find = state.dbTail.find((el: any) => el.id === node.id)
           if (find) {
             return {
               ...find
             }
           }
-          return {...dbPath, id: node.id}
+          return {...dbTail, id: node.id}
         })
 
 
       return {
           ...state,
         trees: newTrees,
-        dbPath: newDbPath
+        dbTail: newdbTail
       };
     }
     return state;
@@ -115,7 +115,7 @@ export const CachedTreeReducer = new ReducerFactory(initialState)
 
       const tree = newTrees[firstIndex]
       const newTree = lSet(lClone(tree), path, value, lClone)
-      console.log('newTree', newTree, path)
+
       newTrees[firstIndex] = newTree
 
       return {
@@ -133,14 +133,11 @@ export const CachedTreeReducer = new ReducerFactory(initialState)
       let { level, indexes } = state.selectedPath
 
       let { firstIndex, path } = makePath(level, indexes, false)
-
       const tree = newTrees[firstIndex]
-
       path += 'isDeleted'
 
 
       const newTree = lSet(lClone(tree), path, true, lClone)
-      console.log('delete', path, newTree)
 
       newTrees[firstIndex] = newTree
 
@@ -157,18 +154,14 @@ export const CachedTreeReducer = new ReducerFactory(initialState)
   })
   .addReducer(CachedTreeActions.deleteNestedNodeAction, (state, action) => {
       const newTrees = [...state.trees];
-
       let { level, indexes } = action.payload.path
 
       let { firstIndex, path } = makePath(level, indexes, false)
 
       const tree = newTrees[firstIndex]
-
       path += 'isDeleted'
 
-
       const newTree = lSet(lClone(tree), path, true, lClone)
-      console.log('delete', path, newTree)
 
       newTrees[firstIndex] = newTree
 
@@ -193,7 +186,6 @@ export const CachedTreeReducer = new ReducerFactory(initialState)
       const childId =  makeId(selectedPath, selectedNode)
 
       const tree = newTrees[firstIndex]
-      console.log('add', tree)
 
       const newTree = lUpdate(lDeepClone(tree), path, function (childs: Node[]) {
         return [...childs, { id: childId, isDeleted: false, value: 'New Node', childs: [] }]
@@ -219,7 +211,6 @@ export const CachedTreeReducer = new ReducerFactory(initialState)
 
 function makePath(level: number, indexes: number[], withValue = true): any {
   let path = ''
-  console.log(' makePath', level, indexes)
 
   for (let i = 1; i <= level; i++) {
     path += 'childs'
@@ -231,8 +222,6 @@ function makePath(level: number, indexes: number[], withValue = true): any {
   if (withValue) {
     path += 'value'
   }
-
-  console.log('return makePath', {firstIndex: indexes[0], path })
 
   return { firstIndex: indexes[0], path }
 }
@@ -248,14 +237,6 @@ function makeId(path: Path, parentNode: Node) {
   return hash;
 }
 
-
-function isChild(root: Node, node: Node): boolean {
-  return root.childs.some((child: Node) => child.id === node.id)
-}
-
-function isParent(root:Node, node: Node): boolean {
-  return node.childs.some((child: Node) => child.id === root.id)
-}
 
 function insertParent(childs: Node[], node: Node, F: { success: boolean }, withSplice = false): Node | undefined {
   if (!childs) return
@@ -289,17 +270,14 @@ function haveParent(childs: Node[], node: Node): Node | undefined {
   }
 }
 
-
-
 function insertChildren (childs: Node[], node: Node, F: { success: boolean })  {
   if (!childs) return
-  console.log('insertChildren')
+
   for (let i = 0; i < childs.length; i++) {
     if (childs[i].parentId === node.id) {
       childs[i] = {...node, childs: [...childs.filter(c => c.parentId === node.id)]}
 
       mutationFilter(childs, (c: Node) => {
-        console.log('filter i', c, node, childs[i], i)
         return c.parentId !== node.id
       })
       F.success = true
@@ -327,43 +305,9 @@ function findNode(childs: Node[], node: Node): Node | undefined {
   }
 }
 
-function isNewChild(childs: Node[], node: Node): boolean {
-  return childs.length === 0 || !childs.some(c => c.id === node.id)
-}
-
-
 function withoutChild(node: Node): Node {
   return {...node, childs: []}
 }
-
-
-
-
-function recInsertChild(elTree: Node, dbNode: Node, node: Node): any {
-  if (!elTree || !dbNode) return false
-
-  for (let i = 0; i < dbNode.childs.length; i++) {
-    console.log('loop', dbNode.childs[i], node, i)
-    const r = recInsertChild(elTree.childs[i], dbNode.childs[i], node)
-
-    if (r) {
-      return r
-    }
-
-    const isChildNode = isChild(dbNode.childs[i], node)
-    // console.log('isChildNode', isChildNode, dbNode.childs[i], node, i)
-    // console.log('elTree', elTree)
-    if (isChildNode) {
-      const tree = elTree.childs.find((n) => n.id === dbNode.childs[i].id)
-      if (tree) {
-        tree.childs.push(withoutChild(node))
-        return true
-      }
-    }
-  }
-
-}
-
 
 function mutationFilter(arr: any[], cb: Function) {
   for (let l = arr.length - 1; l >= 0; l -= 1) {
