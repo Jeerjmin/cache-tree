@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { updateWith as lUpdate, cloneDeep as lDeepClone } from 'lodash'
-import {Tree, TreeFactory} from './index'
+import { updateWith as lUpdate, unionBy as lUnion } from 'lodash'
+import { TreeFactory} from './index'
 import {Node} from '../../interfaces'
 
 export const getTree = (req: Request, res: Response) => {
@@ -10,49 +10,79 @@ export const getTree = (req: Request, res: Response) => {
 export const applyTree = (req: Request, res: Response) => {
     let { tree } = global as any
     
-    let { dbPath, tree: cacheTree } = req.body
-            
-    const { level, indexes } = dbPath
-    
-    const path = tree.makePath(level, indexes, false)
+    let { trees: cacheTree } = req.body
 
-    if (path === '') {
-        tree = {
-            ...tree, 
-            value: cacheTree.value, 
-            isDeleted: cacheTree.isDeleted,
-            childs: [
-                ...tree.childs, 
-                ...cacheTree.childs 
-            ] 
+    function makePath(level: number, indexes: number[]): any {
+        let path = ''
+
+        for (let i = 0; i < level; i++) {
+            path += 'childs'
+            if (indexes[i] !== undefined) {
+                path += '[' + indexes[i] + ']' + '.'
+            }
         }
 
-        tree = new Tree(tree.id, tree.value, tree.childs);
-
-        if (cacheTree.isDeleted) {
-            tree = tree.setIsDeleted(tree)
-        }
-        
-    } else {
-        tree = lUpdate(lDeepClone(tree), path, function (node: Node) {
-
-            if (cacheTree.isDeleted) {
-                node = tree.setIsDeleted(node)
-            }
-
-            return {
-                ...node, 
-                value: cacheTree.value, 
-                isDeleted: cacheTree.isDeleted,
-                childs: [
-                    ...node.childs, 
-                    ...cacheTree.childs 
-                ] 
-            }
-        })
+        return path.substring(0, path.length-1)
     }
 
-    (global as any).tree = tree
+    function setIsDeleted (node: Node) {
+        const n = node;
+        node.isDeleted = true;
+        if (n.childs && n.childs.length > 0) {
+            n.childs.forEach((v: Node) => {
+                setIsDeleted(v);
+            });
+        }
+        return n;
+    }
+
+    function insertNode(node: Node) {
+        if (!node) return
+        if (!node.dbTail) return;
+
+        const { dbTail: { level, indexes } } = node
+        let path = makePath(level, indexes)
+
+        if (path) {
+            lUpdate(tree, path, function (updatedNode: Node) {
+                const unionChilds = lUnion(updatedNode.childs, node.childs.filter(n => n.dbTail === undefined), 'id')
+
+                return {
+                    ...updatedNode,
+                    value: node.value,
+                    isDeleted: node.isDeleted,
+                    childs: unionChilds
+                }
+            })
+        } else {
+            tree = {
+                ...tree,
+                value: node.value,
+                isDeleted: node.isDeleted,
+                childs: [
+                    ...tree.childs,
+                    ...node.childs.filter(n => n.dbTail === undefined)
+                ]
+            }
+
+            if (node.isDeleted) {
+                setIsDeleted(tree)
+            }
+        }
+
+        for (let i = 0; i < node.childs.length; i++) {
+            insertNode(node.childs[i])
+        }
+    }
+
+
+
+
+
+    cacheTree.forEach((treeEl: Node) => insertNode(treeEl))
+
+
+
 
 
     res.status(200).json(tree)

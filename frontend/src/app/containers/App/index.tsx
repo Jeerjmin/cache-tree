@@ -11,10 +11,10 @@ import style from './style.css';
 export const App = () => {
 
     const dispatch = useDispatch();
-    const { tree, selectedNode, CachedTree, changedNode, selectedCacheNode, isFetching } = useSelector((state: RootState) => {
+    const { tree, selectedNode, CachedTrees, changedNode, selectedCacheNode, isFetching } = useSelector((state: RootState) => {
         return {
             ...state.DBTree,
-            CachedTree: state.CachedTree.tree,
+            CachedTrees: state.CachedTree.trees,
             selectedCacheNode: state.CachedTree.selectedNode,
             changedNode: state.CachedTree.changedNode
         }
@@ -26,32 +26,32 @@ export const App = () => {
         <div className={style.container}>
             <div className={style.box}>
                 <div className={style.top}>
-                    <CachedTreeView 
-                        CachedTree={CachedTree} 
+                    <CachedTreeView
+                        CachedTrees={CachedTrees}
                         selectNode={CachedTreeActions.selectNode}
-                        selectedNode={selectedCacheNode} 
+                        selectedNode={selectedCacheNode}
                         changedNode={changedNode}
                         changeNode={CachedTreeActions.changeNode}
                         deleteNestedNode={CachedTreeActions.deleteNestedNode}
                     />
                     <span onClick={CachedTreeActions.loadNode}>Arrow</span>
                     <DBTreeView
-                        isFetching={isFetching} 
-                        DBTree={tree} 
+                        isFetching={isFetching}
+                        DBTree={tree}
                         getDBTree={DBTreeActions.getDBTree}
                         selectNode={DBTreeActions.selectNode}
-                        selectedNode={selectedNode} 
+                        selectedNode={selectedNode}
                     />
                 </div>
                 <div className={style.bottom}>
-                    <Tools 
+                    <Tools
                         deleteNode={CachedTreeActions.deleteNode}
                         addNode={CachedTreeActions.addNode}
                         enableChangeMode={CachedTreeActions.enableChangeMode}
                         applyTree={CachedTreeActions.applyTree}
                         selectedNode={selectedCacheNode}
                         resetCache={CachedTreeActions.resetCache}
-                        resetDBTree={DBTreeActions.resetDBTree} 
+                        resetDBTree={DBTreeActions.resetDBTree}
                     />
                 </div>
             </div>

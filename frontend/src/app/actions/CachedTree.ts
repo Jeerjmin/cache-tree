@@ -20,14 +20,13 @@ export namespace CachedTreeActions {
     RESET = 'RESET'
   }
 
-  
+
   export const loadNode = () => {
     return (dispatch: Dispatch, getStore: () => RootState) => {
       const { DBTree: { selectedPath, selectedNode } } = getStore()
 
       if (selectedNode && selectedPath) {
-        dispatch(loadNodeAction({ node: selectedNode, dbPath: selectedPath }))
-
+        dispatch(loadNodeAction({ node: selectedNode, dbTail: selectedPath }))
       }
     }
   }
@@ -38,13 +37,13 @@ export namespace CachedTreeActions {
       const {CachedTree} = getStore()
 
       axios.post('http://localhost:3000/tree', {
-        tree: CachedTree.tree,
-        dbPath: CachedTree.dbPath,
+        trees: CachedTree.trees,
+        dbTail: CachedTree.dbTail
       })
       .then(({ data }: { data: Node }) => {
           dispatch(applyTreeActionSuccess(data))
       })
-      .catch(() => dispatch(applyTreeActionFailed()))    
+      .catch(() => dispatch(applyTreeActionFailed()))
     }
   }
 
@@ -58,9 +57,9 @@ export namespace CachedTreeActions {
       }
     }
   }
-    
 
-  export const selectNode = (payload: { node: Node, path: Path }) => 
+
+  export const selectNode = (payload: { node: Node, path: Path }) =>
     (dispatch: Dispatch) => dispatch(selectNodeAction(payload))
 
   export const deleteNode = () => (dispatch: Dispatch) => dispatch(deleteNodeAction())
@@ -94,7 +93,7 @@ export namespace CachedTreeActions {
     export const applyTreeActionRequest = createAction(Type.APPLY_TREE_REQUEST)
     export const applyTreeActionSuccess = createAction<Node>(Type.APPLY_TREE_SUCCESS)
     export const applyTreeActionFailed = createAction(Type.APPLY_TREE_FAILED)
-    export const loadNodeAction = createAction<{ dbPath: Path, node: Node }>(Type.LOAD_NODE)
+    export const loadNodeAction = createAction<{ dbTail: Path, node: Node }>(Type.LOAD_NODE)
     export const resetAction = createAction(Type.RESET)
 
   }

@@ -2,17 +2,18 @@ import { ReducerFactory } from 'redux-actions-ts-reducer';
 import { RootState } from './state';
 import { Node, Path } from '../../../../interfaces';
 import { CachedTreeActions } from 'app/actions';
-import { 
-  setWith as lSet, 
-  clone as lClone, 
-  cloneDeep as lDeepClone, 
-  updateWith as lUpdate
+import {
+  setWith as lSet,
+  clone as lClone,
+  cloneDeep as lDeepClone,
+  updateWith as lUpdate,
 } from 'lodash';
 
 
 const initialState: RootState.CachedTreeState = {
+    trees: [],
     tree: null,
-    dbPath: null,
+    dbTail: [],
     selectedNode: null,
     selectedPath: null,
     changedNode: null
@@ -27,10 +28,58 @@ export const CachedTreeReducer = new ReducerFactory(initialState)
   })
   .addReducer(CachedTreeActions.loadNodeAction, (state, action) => {
     if (action.payload) {
+      const { dbTail } = action.payload
+      const node = { ...withoutChild(action.payload.node), dbTail }
+
+      const trees = state.trees
+      let newTrees = [...trees]
+
+      if (trees.length === 0) {
+        newTrees = [node]
+      } else
+        if (!findNode(newTrees, node)) {
+          const isChildInserted = { success: false }
+          const isP1Inserted = { success: false }
+          let P2;
+
+          insertParent(newTrees, node, isP1Inserted)
+
+          if (isP1Inserted.success) {
+            for (let i = 0; i<newTrees.length; i++) {
+              P2 = haveParent(newTrees, newTrees[i])
+
+              if (P2) {
+                P2.childs.push(newTrees[i])
+                newTrees.splice(i, 1)
+                i--
+              }
+            }
+          }
+
+          if (!isP1Inserted.success && !P2) {
+            insertChildren(newTrees, node, isChildInserted)
+
+            if (!isChildInserted.success) {
+              newTrees = [...newTrees, node]
+            }
+          }
+        }
+
+        const newdbTail = newTrees.map((node:Node) => {
+          const find = state.dbTail.find((el: any) => el.id === node.id)
+          if (find) {
+            return {
+              ...find
+            }
+          }
+          return {...dbTail, id: node.id}
+        })
+
+
       return {
           ...state,
-        tree: lDeepClone({ ...action.payload.node, childs: [] }),
-        dbPath: { ...action.payload.dbPath }
+        trees: newTrees,
+        dbTail: newdbTail
       };
     }
     return state;
@@ -55,38 +104,46 @@ export const CachedTreeReducer = new ReducerFactory(initialState)
     return state;
   })
   .addReducer(CachedTreeActions.changeNodeAction, (state, action) => {
-    const { selectedPath, tree } = state
+    const { selectedPath, trees } = state
 
-    if (action.payload && tree && selectedPath) {
-      
+    if (action.payload && selectedPath) {
+      const newTrees = [...trees];
       const { value } = action.payload
       const { level, indexes } = selectedPath
 
-      const path = makePath(level, indexes)
+      const { firstIndex, path } = makePath(level, indexes)
+
+      const tree = newTrees[firstIndex]
+      const newTree = lSet(lClone(tree), path, value, lClone)
+
+      newTrees[firstIndex] = newTree
 
       return {
           ...state,
-          tree: lSet(lClone(tree), path, value, lClone),
-          changedNode: null,
+        trees: newTrees,
+        changedNode: null,
       };
     }
     return state;
   })
   .addReducer(CachedTreeActions.deleteNodeAction, (state) => {
-    if (state.tree && state.selectedPath) {
+    if (state.selectedPath) {
+      const newTrees = [...state.trees];
+
       let { level, indexes } = state.selectedPath
 
-      let path = makePath(level, indexes, false)
+      let { firstIndex, path } = makePath(level, indexes, false)
+      const tree = newTrees[firstIndex]
+      path += 'isDeleted'
 
-      if (path) {
-        path += '.isDeleted'
-      } else {
-        path += 'isDeleted'
-      }
+
+      const newTree = lSet(lClone(tree), path, true, lClone)
+
+      newTrees[firstIndex] = newTree
 
       return {
         ...state,
-        tree: lSet(lClone(state.tree), path, true, lClone),
+        trees: newTrees,
         selectedNode: null,
         selectedPath: null,
         changedNode: null,
@@ -96,48 +153,52 @@ export const CachedTreeReducer = new ReducerFactory(initialState)
     return state
   })
   .addReducer(CachedTreeActions.deleteNestedNodeAction, (state, action) => {
-    if (state.tree) {
+      const newTrees = [...state.trees];
       let { level, indexes } = action.payload.path
 
-      let path = makePath(level, indexes, false)
+      let { firstIndex, path } = makePath(level, indexes, false)
 
-      if (path) {
-        path += '.isDeleted'
-      } else {
-        path += 'isDeleted'
-      }
+      const tree = newTrees[firstIndex]
+      path += 'isDeleted'
+
+      const newTree = lSet(lClone(tree), path, true, lClone)
+
+      newTrees[firstIndex] = newTree
 
       return {
         ...state,
-        tree: lSet(lClone(state.tree), path, true, lClone),
+        trees: newTrees,
         selectedNode: null,
         selectedPath: null,
         changedNode: null,
       }
-    }
 
-    return state
   })
   .addReducer(CachedTreeActions.addNodeAction, (state) => {
-    const { selectedNode, selectedPath, tree } = state
+    const { selectedNode, selectedPath, trees } = state
 
-    if (tree && selectedNode && selectedPath) {
-        const { level, indexes } = selectedPath
+    if (selectedNode && selectedPath) {
+      const newTrees = [...trees];
+      const { level, indexes } = selectedPath
 
-        const path = makePath(level, indexes, false) + 'childs'
+      let { firstIndex, path } = makePath(level, indexes, false)
+      path += 'childs'
+      const childId =  makeId(selectedPath, selectedNode)
 
-        const childId =  makeId(selectedPath, selectedNode)
+      const tree = newTrees[firstIndex]
 
-        const newTree = lUpdate(lDeepClone(tree), path, function (childs: Node[]) {
-          return [...childs, { id: childId, isDeleted: false, value: 'New Node', childs: [] }]
-        })
-        
-        return {
-          ...state,
-          tree: newTree,
-          selectedNode: null,
-          changedNode: null
-        }
+      const newTree = lUpdate(lDeepClone(tree), path, function (childs: Node[]) {
+        return [...childs, { id: childId, isDeleted: false, value: 'New Node', childs: [] }]
+      })
+
+      newTrees[firstIndex] = newTree
+
+      return {
+        ...state,
+        trees: newTrees,
+        selectedNode: null,
+        changedNode: null
+      }
     }
     return state;
   })
@@ -148,22 +209,21 @@ export const CachedTreeReducer = new ReducerFactory(initialState)
   })
   .toReducer()
 
-function makePath(level: number, indexes: number[], withValue = true): string {
+function makePath(level: number, indexes: number[], withValue = true): any {
   let path = ''
+
   for (let i = 1; i <= level; i++) {
     path += 'childs'
-    if (indexes[i-1] !== undefined) {
-      path += '[' + indexes[i-1] + ']' + '.'
+    if (indexes[i] !== undefined) {
+      path += '[' + indexes[i] + ']' + '.'
     }
   }
 
   if (withValue) {
     path += 'value'
-  } else {
-    path = path.slice(0, path.length - 1)
   }
 
-  return path
+  return { firstIndex: indexes[0], path }
 }
 
 function makeId(path: Path, parentNode: Node) {
@@ -175,4 +235,82 @@ function makeId(path: Path, parentNode: Node) {
     hash |= 0;
   }
   return hash;
+}
+
+
+function insertParent(childs: Node[], node: Node, F: { success: boolean }, withSplice = false): Node | undefined {
+  if (!childs) return
+
+  for (let i = 0; i < childs.length; i++) {
+   if (childs[i].id === node.parentId) {
+     childs[i].childs.push(node)
+     F.success = true
+
+     if (withSplice) {
+       childs.splice(i, 1)
+       i--
+     }
+   }
+    insertParent(childs[i].childs, node, F)
+  }
+}
+
+function haveParent(childs: Node[], node: Node): Node | undefined {
+  if (!childs) return
+
+  for (let i = 0; i < childs.length; i++) {
+    if (childs[i].id === node.parentId) {
+      return childs[i]
+    }
+
+    const r = haveParent(childs[i].childs, node)
+    if (r) {
+      return r
+    }
+  }
+}
+
+function insertChildren (childs: Node[], node: Node, F: { success: boolean })  {
+  if (!childs) return
+
+  for (let i = 0; i < childs.length; i++) {
+    if (childs[i].parentId === node.id) {
+      childs[i] = {...node, childs: [...childs.filter(c => c.parentId === node.id)]}
+
+      mutationFilter(childs, (c: Node) => {
+        return c.parentId !== node.id
+      })
+      F.success = true
+      return
+    }
+    insertChildren(childs[i].childs, node, F)
+  }
+}
+
+function findNode(childs: Node[], node: Node): Node | undefined {
+  if (!childs || childs.length === 0) return
+
+  const findedNode = childs.find((childNode) => childNode.id === node.id)
+
+  if (findedNode) {
+    return findedNode
+  }
+
+  for (let i = 0; i < childs.length; i++) {
+    const r = findNode(childs[i].childs, node)
+
+    if (r) {
+      return r
+    }
+  }
+}
+
+function withoutChild(node: Node): Node {
+  return {...node, childs: []}
+}
+
+function mutationFilter(arr: any[], cb: Function) {
+  for (let l = arr.length - 1; l >= 0; l -= 1) {
+    if (!cb(arr[l])) arr.splice(l, 1);
+  }
 }
