@@ -14,7 +14,7 @@ namespace DBTreeView {
       isFetching: boolean;
   }
 }
-  
+
 export const DBTreeView = ({ DBTree, selectedNode, getDBTree, selectNode, isFetching }: DBTreeView.Props): JSX.Element | null => {
 
     useEffect(() => {
@@ -25,13 +25,13 @@ export const DBTreeView = ({ DBTree, selectedNode, getDBTree, selectNode, isFetc
         <div className={style.container}>
           { isFetching && <span>Loading</span> }
           { DBTree && <TreeNode
-                type='DB'
-                level={0}
-                indexes={[]} 
-                node={DBTree}
-                selectNode={selectNode}
-                selectedNode={selectedNode}
-            />
+            type='DB'
+            level={0}
+            indexes={[]}
+            node={DBTree}
+            selectNode={selectNode}
+            selectedNode={selectedNode}
+          />
           }
         </div>
     )

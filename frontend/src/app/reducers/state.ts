@@ -17,7 +17,7 @@ export namespace RootState {
   export interface CachedTreeState {
     trees: Node[];
     tree: Node | null;
-    dbPath: Path[],
+    dbTail: Path[],
     selectedNode: Node | null,
     selectedPath: Path | null
     changedNode: Node | null
