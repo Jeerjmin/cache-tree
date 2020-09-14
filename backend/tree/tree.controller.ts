@@ -68,14 +68,13 @@ export const applyTree = (req: Request, res: Response) => {
             if (node.isDeleted) {
                 setIsDeleted(tree)
             }
+
         }
 
         for (let i = 0; i < node.childs.length; i++) {
             insertNode(node.childs[i])
         }
     }
-
-
 
 
     cacheTree.forEach((treeEl: Node) => insertNode(treeEl))
