@@ -188,7 +188,7 @@ export const CachedTreeReducer = new ReducerFactory(initialState)
       const tree = newTrees[firstIndex]
 
       const newTree = lUpdate(lDeepClone(tree), path, function (childs: Node[]) {
-        return [...childs, { id: childId, isDeleted: false, value: 'New Node', childs: [] }]
+        return [...childs, { id: childId, parentId: selectedNode.id, isDeleted: false, value: 'New Node', childs: [] }]
       })
 
       newTrees[firstIndex] = newTree

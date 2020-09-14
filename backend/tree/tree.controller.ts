@@ -68,6 +68,7 @@ export const applyTree = (req: Request, res: Response) => {
             if (node.isDeleted) {
                 setIsDeleted(tree)
             }
+
         }
 
         for (let i = 0; i < node.childs.length; i++) {
@@ -76,16 +77,11 @@ export const applyTree = (req: Request, res: Response) => {
     }
 
 
-
-
-
     cacheTree.forEach((treeEl: Node) => insertNode(treeEl))
 
 
-
-
-
-    res.status(200).json(tree)
+    res.status(200).json(tree);
+    (global as any).tree = new TreeFactory().init()
 }
 
 export const resetTree = (req: Request, res: Response) => {
