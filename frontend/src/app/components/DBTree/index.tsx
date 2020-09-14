@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import style from './style.css'
-import { DBTreeActions } from 'app/actions';
+import {CachedTreeActions, DBTreeActions} from 'app/actions';
 import { TreeNode } from '../TreeNode';
 import { Node } from '../../../../../interfaces';
 
@@ -11,11 +11,12 @@ namespace DBTreeView {
       selectedNode: Node | null;
       getDBTree: typeof DBTreeActions.getDBTree;
       selectNode: typeof DBTreeActions.selectNode;
+      addTail: typeof CachedTreeActions.addTail;
       isFetching: boolean;
   }
 }
 
-export const DBTreeView = ({ DBTree, selectedNode, getDBTree, selectNode, isFetching }: DBTreeView.Props): JSX.Element | null => {
+export const DBTreeView = ({ DBTree, selectedNode, getDBTree, selectNode, addTail, isFetching }: DBTreeView.Props): JSX.Element | null => {
 
     useEffect(() => {
       getDBTree()
@@ -31,6 +32,7 @@ export const DBTreeView = ({ DBTree, selectedNode, getDBTree, selectNode, isFetc
             node={DBTree}
             selectNode={selectNode}
             selectedNode={selectedNode}
+            addTail={addTail}
           />
           }
         </div>

@@ -16,13 +16,14 @@ export namespace TreeNode {
         changeNode?: typeof CachedTreeActions.changeNode;
         changedNode?: Node | null;
         deleteNestedNode?: typeof CachedTreeActions.deleteNestedNode;
-        parentDeleted?: boolean
+        parentDeleted?: boolean;
+        addTail?: typeof CachedTreeActions.addTail
     }
 }
 
 export const TreeNode = ({
         type, node, level, indexes, selectNode, selectedNode,
-        changeNode, changedNode, deleteNestedNode, parentDeleted
+        changeNode, changedNode, deleteNestedNode, parentDeleted, addTail
     }: TreeNode.Props): JSX.Element | null => {
 
     const [value, changeValue] = useState<string>('')
@@ -32,6 +33,14 @@ export const TreeNode = ({
             deleteNestedNode({ path: { level, indexes }})
         }
     }, [parentDeleted])
+
+    useEffect(() => {
+      if (type === 'DB' && node.dbTail === null) {
+        if (addTail) {
+          addTail({ path: {level, indexes}, id: node.id })
+        }
+      }
+    }, [0])
 
     const renderValue = () => {
 
@@ -82,6 +91,7 @@ export const TreeNode = ({
                         changedNode={changedNode}
                         deleteNestedNode={deleteNestedNode}
                         parentDeleted={node.isDeleted}
+                        addTail={addTail}
                     />
                 </React.Fragment>
             ))}

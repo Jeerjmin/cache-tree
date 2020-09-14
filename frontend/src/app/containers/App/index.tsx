@@ -41,6 +41,7 @@ export const App = () => {
                         getDBTree={DBTreeActions.getDBTree}
                         selectNode={DBTreeActions.selectNode}
                         selectedNode={selectedNode}
+                        addTail={CachedTreeActions.addTail}
                     />
                 </div>
                 <div className={style.bottom}>

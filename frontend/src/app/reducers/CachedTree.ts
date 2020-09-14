@@ -13,7 +13,6 @@ import {
 const initialState: RootState.CachedTreeState = {
     trees: [],
     tree: null,
-    dbTail: [],
     selectedNode: null,
     selectedPath: null,
     changedNode: null
@@ -65,21 +64,9 @@ export const CachedTreeReducer = new ReducerFactory(initialState)
           }
         }
 
-        const newdbTail = newTrees.map((node:Node) => {
-          const find = state.dbTail.find((el: any) => el.id === node.id)
-          if (find) {
-            return {
-              ...find
-            }
-          }
-          return {...dbTail, id: node.id}
-        })
-
-
       return {
           ...state,
         trees: newTrees,
-        dbTail: newdbTail
       };
     }
     return state;
@@ -128,7 +115,7 @@ export const CachedTreeReducer = new ReducerFactory(initialState)
   })
   .addReducer(CachedTreeActions.deleteNodeAction, (state) => {
     if (state.selectedPath) {
-      const newTrees = [...state.trees];
+      const newTrees = lDeepClone(state.trees);
 
       let { level, indexes } = state.selectedPath
 
@@ -140,6 +127,18 @@ export const CachedTreeReducer = new ReducerFactory(initialState)
       const newTree = lSet(lClone(tree), path, true, lClone)
 
       newTrees[firstIndex] = newTree
+
+      newTrees.forEach((tree: Node, i: number) => {
+        if (newTree.dbTail && tree && tree.dbTail) {
+          const indexesDeletedNode = newTree.dbTail.indexes.join('')
+          const indexes = tree.dbTail.indexes.join('').substring(0, indexesDeletedNode.length)
+
+          if (indexes === indexesDeletedNode) {
+            newTrees[i].isDeleted = true
+          }
+
+        }
+      })
 
       return {
         ...state,
@@ -188,7 +187,7 @@ export const CachedTreeReducer = new ReducerFactory(initialState)
       const tree = newTrees[firstIndex]
 
       const newTree = lUpdate(lDeepClone(tree), path, function (childs: Node[]) {
-        return [...childs, { id: childId, parentId: selectedNode.id, isDeleted: false, value: 'New Node', childs: [] }]
+        return [...childs, { id: childId, dbTail: null, parentId: selectedNode.id, isDeleted: false, value: 'New Node', childs: [] }]
       })
 
       newTrees[firstIndex] = newTree
@@ -207,7 +206,30 @@ export const CachedTreeReducer = new ReducerFactory(initialState)
       ...initialState
     }
   })
+  .addReducer(CachedTreeActions.makeTails, (state, action) => {
+    const {path, id} = action.payload
+    const newTrees = lDeepClone(state.trees)
+
+    newTrees.forEach((node: Node) => addTail(path, id, node))
+
+    return {
+      ...state,
+      trees: newTrees
+    }
+  })
   .toReducer()
+
+
+function addTail(path: Path, id: number, node: Node) {
+  if (!node) return
+  if (node.id === id) {
+    node.dbTail = { level: path.level , indexes: path.indexes }
+  }
+
+  node.childs.forEach((childNode: Node, i: number) => {
+    addTail(path, id, childNode)
+  })
+}
 
 function makePath(level: number, indexes: number[], withValue = true): any {
   let path = ''
@@ -234,7 +256,7 @@ function makeId(path: Path, parentNode: Node) {
     hash = ((hash << 5) - hash) + chr;
     hash |= 0;
   }
-  return hash;
+  return hash + new Date().getMilliseconds();
 }
 
 

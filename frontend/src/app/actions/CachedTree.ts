@@ -17,7 +17,8 @@ export namespace CachedTreeActions {
     APPLY_TREE_REQUEST = 'APPLY_TREE_REQUEST',
     APPLY_TREE_SUCCESS = 'APPLY_TREE_SUCCESS',
     APPLY_TREE_FAILED = 'APPLY_TREE_FAILED',
-    RESET = 'RESET'
+    RESET = 'RESET',
+    MAKE_TAILS = 'MAKE_TAILS'
   }
 
 
@@ -38,7 +39,6 @@ export namespace CachedTreeActions {
 
       axios.post('http://localhost:3000/tree', {
         trees: CachedTree.trees,
-        dbTail: CachedTree.dbTail
       })
       .then(({ data }: { data: Node }) => {
           dispatch(applyTreeActionSuccess(data))
@@ -83,6 +83,8 @@ export namespace CachedTreeActions {
     (dispatch: Dispatch) => dispatch(changeNodeAction(payload))
 
 
+  export const addTail = (payload: { path: Path, id: number }) =>
+    (dispatch: Dispatch) => dispatch(makeTails(payload))
 
     export const changeNodeAction = createAction< {value: string} >(Type.CHANGE_NODE)
     export const enableChangeModeAction = createAction<Node>(Type.ENABLE_CHANGE_MODE)
@@ -95,6 +97,7 @@ export namespace CachedTreeActions {
     export const applyTreeActionFailed = createAction(Type.APPLY_TREE_FAILED)
     export const loadNodeAction = createAction<{ dbTail: Path, node: Node }>(Type.LOAD_NODE)
     export const resetAction = createAction(Type.RESET)
+    export const makeTails = createAction<{ path: Path, id: number }>(Type.MAKE_TAILS)
 
   }
 

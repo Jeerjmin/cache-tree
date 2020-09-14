@@ -45,17 +45,19 @@ export const applyTree = (req: Request, res: Response) => {
 
         if (path) {
             lUpdate(tree, path, function (updatedNode: Node) {
-                const unionChilds = lUnion(updatedNode.childs, node.childs.filter(n => n.dbTail === undefined), 'id')
+                const unionChilds = lUnion(updatedNode.childs, node.childs.filter(n => n.dbTail === null), 'id')
 
                 if (node.isDeleted) {
                     unionChilds.forEach(c => setIsDeleted(c))
                 }
+
                 return {
                     ...updatedNode,
                     value: node.value,
                     isDeleted: node.isDeleted,
                     childs: unionChilds
                 }
+
             })
         } else {
             tree = {
@@ -64,7 +66,7 @@ export const applyTree = (req: Request, res: Response) => {
                 isDeleted: node.isDeleted,
                 childs: [
                     ...tree.childs,
-                    ...node.childs.filter(n => n.dbTail === undefined)
+                    ...node.childs.filter(n => n.dbTail === null)
                 ]
             }
 
@@ -82,9 +84,9 @@ export const applyTree = (req: Request, res: Response) => {
     cacheTree = cacheTree.sort((a: Node, b: Node) => {
         if (a.dbTail && b.dbTail) {
             if (a.dbTail.level > b.dbTail.level) {
-                return 1
-            } else {
                 return -1
+            } else {
+                return 1
             }
         }
         return 0
