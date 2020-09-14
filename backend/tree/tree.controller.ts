@@ -47,6 +47,9 @@ export const applyTree = (req: Request, res: Response) => {
             lUpdate(tree, path, function (updatedNode: Node) {
                 const unionChilds = lUnion(updatedNode.childs, node.childs.filter(n => n.dbTail === undefined), 'id')
 
+                if (node.isDeleted) {
+                    unionChilds.forEach(c => setIsDeleted(c))
+                }
                 return {
                     ...updatedNode,
                     value: node.value,
@@ -76,13 +79,20 @@ export const applyTree = (req: Request, res: Response) => {
     }
 
 
+    cacheTree = cacheTree.sort((a: Node, b: Node) => {
+        if (a.dbTail && b.dbTail) {
+            if (a.dbTail.level > b.dbTail.level) {
+                return 1
+            } else {
+                return -1
+            }
+        }
+        return 0
+    })
 
-
-
-    cacheTree.forEach((treeEl: Node) => insertNode(treeEl))
-
-
-
+    cacheTree.forEach((treeEl: Node) => {
+        insertNode(treeEl)
+    })
 
 
     res.status(200).json(tree)
