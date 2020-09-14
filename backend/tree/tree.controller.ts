@@ -1,5 +1,9 @@
 import { Request, Response } from 'express';
-import { updateWith as lUpdate, unionBy as lUnion } from 'lodash'
+import {
+    updateWith as lUpdate,
+    unionBy as lUnion,
+    cloneDeep as lDeepClone
+} from 'lodash'
 import { TreeFactory} from './index'
 import {Node} from '../../interfaces'
 
@@ -9,6 +13,7 @@ export const getTree = (req: Request, res: Response) => {
 
 export const applyTree = (req: Request, res: Response) => {
     let { tree } = global as any
+    let newTree = lDeepClone(tree)
     
     let { trees: cacheTree } = req.body
 
@@ -44,7 +49,7 @@ export const applyTree = (req: Request, res: Response) => {
         let path = makePath(level, indexes)
 
         if (path) {
-            lUpdate(tree, path, function (updatedNode: Node) {
+            lUpdate(newTree, path, function (updatedNode: Node) {
                 const unionChilds = lUnion(updatedNode.childs, node.childs.filter(n => n.dbTail === undefined), 'id')
 
                 return {
@@ -55,19 +60,21 @@ export const applyTree = (req: Request, res: Response) => {
                 }
             })
         } else {
-            tree = {
-                ...tree,
+
+            newTree = {
+                ...newTree,
                 value: node.value,
                 isDeleted: node.isDeleted,
                 childs: [
-                    ...tree.childs,
+                    ...newTree.childs,
                     ...node.childs.filter(n => n.dbTail === undefined)
                 ]
             }
 
             if (node.isDeleted) {
-                setIsDeleted(tree)
+                setIsDeleted(newTree)
             }
+
         }
 
         for (let i = 0; i < node.childs.length; i++) {
@@ -76,16 +83,10 @@ export const applyTree = (req: Request, res: Response) => {
     }
 
 
-
-
-
     cacheTree.forEach((treeEl: Node) => insertNode(treeEl))
 
 
-
-
-
-    res.status(200).json(tree)
+    res.status(200).json(newTree);
 }
 
 export const resetTree = (req: Request, res: Response) => {
