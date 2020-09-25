@@ -34,14 +34,13 @@ export const App = () => {
                         changeNode={CachedTreeActions.changeNode}
                         deleteNestedNode={CachedTreeActions.deleteNestedNode}
                     />
-                    <span onClick={CachedTreeActions.loadNode}>Arrow</span>
+                    <span onClick={CachedTreeActions.getNode}>Arrow</span>
                     <DBTreeView
                         isFetching={isFetching}
                         DBTree={tree}
                         getDBTree={DBTreeActions.getDBTree}
                         selectNode={DBTreeActions.selectNode}
                         selectedNode={selectedNode}
-                        addTail={CachedTreeActions.addTail}
                     />
                 </div>
                 <div className={style.bottom}>

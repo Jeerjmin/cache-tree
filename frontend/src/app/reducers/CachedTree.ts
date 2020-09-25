@@ -25,51 +25,49 @@ export const CachedTreeReducer = new ReducerFactory(initialState)
         tree: null
     };
   })
-  .addReducer(CachedTreeActions.loadNodeAction, (state, action) => {
+  .addReducer(CachedTreeActions.getNodeSuccess, (state, action) => {
     if (action.payload) {
-      const { dbTail } = action.payload
-      const node = { ...withoutChild(action.payload.node), dbTail }
-
+      const node = action.payload
       const trees = state.trees
       let newTrees = [...trees]
 
       if (trees.length === 0) {
         newTrees = [node]
       } else
-        if (!findNode(newTrees, node)) {
-          const isChildInserted = { success: false }
-          const isP1Inserted = { success: false }
-          let P2;
+      if (!findNode(newTrees, node)) {
+        const isChildInserted = { success: false }
+        const isP1Inserted = { success: false }
+        let P2;
 
-          insertParent(newTrees, node, isP1Inserted)
+        insertParent(newTrees, node, isP1Inserted)
 
-          if (isP1Inserted.success) {
-            for (let i = 0; i<newTrees.length; i++) {
-              P2 = haveParent(newTrees, newTrees[i])
+        if (isP1Inserted.success) {
+          for (let i = 0; i<newTrees.length; i++) {
+            P2 = haveParent(newTrees, newTrees[i])
 
-              if (P2) {
-                P2.childs.push(newTrees[i])
-                newTrees.splice(i, 1)
-                i--
-              }
-            }
-          }
-
-          if (!isP1Inserted.success && !P2) {
-            insertChildren(newTrees, node, isChildInserted)
-
-            if (!isChildInserted.success) {
-              newTrees = [...newTrees, node]
+            if (P2) {
+              P2.childs.push(newTrees[i])
+              newTrees.splice(i, 1)
+              i--
             }
           }
         }
 
+        if (!isP1Inserted.success && !P2) {
+          insertChildren(newTrees, node, isChildInserted)
+
+          if (!isChildInserted.success) {
+            newTrees = [...newTrees, node]
+          }
+        }
+      }
       return {
-          ...state,
+        ...state,
         trees: newTrees,
       };
+
     }
-    return state;
+    return state
   })
   .addReducer(CachedTreeActions.selectNodeAction, (state, action) => {
     if (action.payload) {
@@ -123,22 +121,9 @@ export const CachedTreeReducer = new ReducerFactory(initialState)
       const tree = newTrees[firstIndex]
       path += 'isDeleted'
 
-
       const newTree = lSet(lClone(tree), path, true, lClone)
 
       newTrees[firstIndex] = newTree
-
-      newTrees.forEach((tree: Node, i: number) => {
-        if (newTree.dbTail && tree && tree.dbTail) {
-          const indexesDeletedNode = newTree.dbTail.indexes.join('')
-          const indexes = tree.dbTail.indexes.join('').substring(0, indexesDeletedNode.length)
-
-          if (indexes === indexesDeletedNode) {
-            newTrees[i].isDeleted = true
-          }
-
-        }
-      })
 
       return {
         ...state,
@@ -206,30 +191,7 @@ export const CachedTreeReducer = new ReducerFactory(initialState)
       ...initialState
     }
   })
-  .addReducer(CachedTreeActions.makeTails, (state, action) => {
-    const {path, id} = action.payload
-    const newTrees = lDeepClone(state.trees)
-
-    newTrees.forEach((node: Node) => addTail(path, id, node))
-
-    return {
-      ...state,
-      trees: newTrees
-    }
-  })
   .toReducer()
-
-
-function addTail(path: Path, id: number, node: Node) {
-  if (!node) return
-  if (node.id === id) {
-    node.dbTail = { level: path.level , indexes: path.indexes }
-  }
-
-  node.childs.forEach((childNode: Node, i: number) => {
-    addTail(path, id, childNode)
-  })
-}
 
 function makePath(level: number, indexes: number[], withValue = true): any {
   let path = ''

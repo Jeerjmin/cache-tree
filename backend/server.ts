@@ -12,6 +12,7 @@ app.use(bodyParser());
 const PORT = process.env.PORT || 3000;
 
 bootstrap()
+app.get("/node", TreeController.getNode)
 
 app.get('/reset', TreeController.resetTree)
 
