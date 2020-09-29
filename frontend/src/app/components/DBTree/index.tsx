@@ -11,12 +11,11 @@ namespace DBTreeView {
       selectedNode: Node | null;
       getDBTree: typeof DBTreeActions.getDBTree;
       selectNode: typeof DBTreeActions.selectNode;
-      addTail: typeof CachedTreeActions.addTail;
       isFetching: boolean;
   }
 }
 
-export const DBTreeView = ({ DBTree, selectedNode, getDBTree, selectNode, addTail, isFetching }: DBTreeView.Props): JSX.Element | null => {
+export const DBTreeView = ({ DBTree, selectedNode, getDBTree, selectNode, isFetching }: DBTreeView.Props): JSX.Element | null => {
 
     useEffect(() => {
       getDBTree()
@@ -32,7 +31,6 @@ export const DBTreeView = ({ DBTree, selectedNode, getDBTree, selectNode, addTai
             node={DBTree}
             selectNode={selectNode}
             selectedNode={selectedNode}
-            addTail={addTail}
           />
           }
         </div>

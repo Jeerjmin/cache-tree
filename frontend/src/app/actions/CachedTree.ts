@@ -7,7 +7,6 @@ import axios from 'axios'
 
 export namespace CachedTreeActions {
   export enum Type {
-    LOAD_NODE = 'LOAD_CACHE_NODE',
     ADD_NODE = 'ADD_CACHE_NODE',
     SELECT_NODE = 'SELECT_CACHE_NODE',
     DELETE_NODE = 'DELETE_CACHE_NODE',
@@ -18,16 +17,28 @@ export namespace CachedTreeActions {
     APPLY_TREE_SUCCESS = 'APPLY_TREE_SUCCESS',
     APPLY_TREE_FAILED = 'APPLY_TREE_FAILED',
     RESET = 'RESET',
-    MAKE_TAILS = 'MAKE_TAILS'
+    GET_NODE_REQUEST = 'GET_NODE_REQUEST',
+    GET_NODE_SUCCESS = 'GET_NODE_SUCCESS',
+    GET_NODE_FAILED = 'GET_NODE_FAILED'
   }
 
-
-  export const loadNode = () => {
+  export const getNode = () => {
     return (dispatch: Dispatch, getStore: () => RootState) => {
-      const { DBTree: { selectedPath, selectedNode } } = getStore()
+      const { DBTree: { selectedNode } } = getStore()
 
-      if (selectedNode && selectedPath) {
-        dispatch(loadNodeAction({ node: selectedNode, dbTail: selectedPath }))
+      if (selectedNode) {
+        dispatch(getNodeRequest())
+        const params = {
+          index: selectedNode.index,
+          parentId: selectedNode.parentId,
+        };
+        axios.get(`http://localhost:3000/node`, { params })
+          .then(({ data }: { data: Node }) => {
+            dispatch(getNodeSuccess(data))
+          })
+          .catch(() => {
+            dispatch(getNodeFailed())
+          })
       }
     }
   }
@@ -82,10 +93,6 @@ export namespace CachedTreeActions {
   export const changeNode = (payload: { value: string }) =>
     (dispatch: Dispatch) => dispatch(changeNodeAction(payload))
 
-
-  export const addTail = (payload: { path: Path, id: number }) =>
-    (dispatch: Dispatch) => dispatch(makeTails(payload))
-
     export const changeNodeAction = createAction< {value: string} >(Type.CHANGE_NODE)
     export const enableChangeModeAction = createAction<Node>(Type.ENABLE_CHANGE_MODE)
     export const deleteNodeAction = createAction(Type.DELETE_NODE)
@@ -95,10 +102,11 @@ export namespace CachedTreeActions {
     export const applyTreeActionRequest = createAction(Type.APPLY_TREE_REQUEST)
     export const applyTreeActionSuccess = createAction<Node>(Type.APPLY_TREE_SUCCESS)
     export const applyTreeActionFailed = createAction(Type.APPLY_TREE_FAILED)
-    export const loadNodeAction = createAction<{ dbTail: Path, node: Node }>(Type.LOAD_NODE)
     export const resetAction = createAction(Type.RESET)
-    export const makeTails = createAction<{ path: Path, id: number }>(Type.MAKE_TAILS)
 
+    export const getNodeRequest = createAction(Type.GET_NODE_REQUEST)
+    export const getNodeSuccess = createAction<Node>(Type.GET_NODE_SUCCESS)
+    export const getNodeFailed = createAction(Type.GET_NODE_FAILED)
   }
 
 
