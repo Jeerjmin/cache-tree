@@ -12,17 +12,24 @@ import {
 
 const initialState: RootState.CachedTreeState = {
     trees: [],
-    tree: null,
     selectedNode: null,
     selectedPath: null,
     changedNode: null
 };
 
 export const CachedTreeReducer = new ReducerFactory(initialState)
-  .addReducer(CachedTreeActions.applyTreeActionSuccess, (state) => {
+  .addReducer(CachedTreeActions.applyTreeActionSuccess, (state, action) => {
+    let cacheTrees = state.trees
+    const dbTree = action.payload
+
+    cacheTrees = cacheTrees.map(cacheTree => {
+      const findedNode = findNode(dbTree.childs, cacheTree)
+      return findedNode ? {...findedNode, childs: [...cacheTree.childs]} : cacheTree
+    })
+
     return {
         ...state,
-        tree: null
+      trees: cacheTrees,
     };
   })
   .addReducer(CachedTreeActions.getNodeSuccess, (state, action) => {
@@ -172,7 +179,7 @@ export const CachedTreeReducer = new ReducerFactory(initialState)
       const tree = newTrees[firstIndex]
 
       const newTree = lUpdate(lDeepClone(tree), path, function (childs: Node[]) {
-        return [...childs, { id: childId, dbTail: null, parentId: selectedNode.id, isDeleted: false, value: 'New Node', childs: [] }]
+        return [...childs, { id: childId, level: selectedNode.level + 1, index: childs.length, parentId: selectedNode.id, isDeleted: false, value: 'New Node', childs: [] }]
       })
 
       newTrees[firstIndex] = newTree
@@ -287,10 +294,6 @@ function findNode(childs: Node[], node: Node): Node | undefined {
       return r
     }
   }
-}
-
-function withoutChild(node: Node): Node {
-  return {...node, childs: []}
 }
 
 function mutationFilter(arr: any[], cb: Function) {
