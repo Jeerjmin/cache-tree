@@ -18,9 +18,18 @@ const initialState: RootState.CachedTreeState = {
 };
 
 export const CachedTreeReducer = new ReducerFactory(initialState)
-  .addReducer(CachedTreeActions.applyTreeActionSuccess, (state) => {
+  .addReducer(CachedTreeActions.applyTreeActionSuccess, (state, action) => {
+    let cacheTrees = state.trees
+    const dbTree = action.payload
+
+    cacheTrees = cacheTrees.map(cacheTree => {
+      const findedNode = findNode(dbTree.childs, cacheTree)
+      return findedNode ? {...findedNode, childs: [...cacheTree.childs]} : cacheTree
+    })
+
     return {
         ...state,
+      trees: cacheTrees,
     };
   })
   .addReducer(CachedTreeActions.getNodeSuccess, (state, action) => {

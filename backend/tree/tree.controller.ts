@@ -28,9 +28,9 @@ export const applyTree = (req: Request, res: Response) => {
 
     cacheTree = cacheTree.sort((a: Node, b: Node) => {
         if (a.level > b.level) {
-            return 1
-        } else {
             return -1
+        } else {
+            return 1
         }
     })
 
